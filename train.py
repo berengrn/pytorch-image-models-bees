@@ -531,6 +531,12 @@ def main():
             num_classes=-1,  # force head adaptation
         )
 
+    #getting the path to the hierarchy.csv, to give it as a kwarg for our hierarchical classification model
+    if args.hierarchy:
+        if not hasattr(args, "model_kwargs"):
+            args.model_kwargs = {}
+        args.model_kwargs["hierarchy"] = args.hierarchy
+
     model = create_model(
         args.model,
         pretrained=args.pretrained,

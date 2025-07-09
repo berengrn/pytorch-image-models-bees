@@ -34,12 +34,12 @@ class taxaNetModel(nn.Module):
         return x
 
 @register_model
-def taxaNet(**kwargs):
+def taxanet(**kwargs):
     hierarchy_csv = kwargs.pop('hierarchy')
     model = taxaNetModel(hierarchy_csv)
     return model
 
 if __name__ == '__main__':
     from timm.models import create_model
-    model = create_model('TaxaNet')
+    model = create_model('taxanet')
     summary(model)
