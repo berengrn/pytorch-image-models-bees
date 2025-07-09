@@ -27,6 +27,7 @@ from timm.layers import apply_test_time_pool, set_fast_norm
 from timm.models import create_model, load_checkpoint, is_model, list_models
 from timm.utils import accuracy, AverageMeter, natural_key, setup_default_logging, set_jit_fuser, \
     decay_batch_step, check_batch_size_retry, ParseKwargs, reparameterize_model
+from timm.loss import taxanet_custom_loss
 
 try:
     from apex import amp
@@ -158,6 +159,12 @@ parser.add_argument('--valid-labels', default='', type=str, metavar='FILENAME',
 parser.add_argument('--retry', default=False, action='store_true',
                     help='Enable batch size decay & retry for single model validation')
 
+#arguments for our hierarchical classification
+parser.add_argument('--hierarchy', default='', type=str, metavar='HIERARCHY',
+                   help='hierarchy csv file')
+parser.add_argument('--custom-loss', action='store_true', default=False,
+                   help='Custom loss for taxanomic Hierarchical classification')
+
 
 def validate(args):
     # might as well try to validate something
@@ -260,7 +267,14 @@ def validate(args):
     if args.num_gpu > 1:
         model = torch.nn.DataParallel(model, device_ids=list(range(args.num_gpu)))
 
-    criterion = nn.CrossEntropyLoss().to(device)
+    #criterion = nn.CrossEntropyLoss().to(device)
+
+    if args.custom_loss:
+        if args.hierarchy:
+            criterion = taxanet_custom_loss(args.hierarchy)
+        else:
+            print("ERROR: please specify a hierarchy mapping csv file in order to use hierarchical loss")
+            exit(1)
 
     root_dir = args.data or args.data_dir
     if args.input_img_mode is None:

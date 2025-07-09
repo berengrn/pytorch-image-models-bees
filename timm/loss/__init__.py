@@ -6,3 +6,4 @@ from .jsd import JsdCrossEntropy
 # Custom loss functions import
 from .logicseg_loss import LogicSegLoss
 from .hierarchical_cross_entropy import HierarchicalCrossEntropy
+from .taxanet_custom_loss import TaxaNetLoss, BuildDictionaries
