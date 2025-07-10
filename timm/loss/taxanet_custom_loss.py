@@ -75,7 +75,7 @@ def BuildDictionaries(csv_path):
 def Build_H_Matrix(parent_to_children,piquets):
     #Construit H telle que H[i][j] == 1 ssi i est parent de j, 0 sinon
     N = piquets[-1]
-    H = np.zeros((N,N))
+    H = torch.zeros((N,N))
     for i in range(N):
         if i in parent_to_children:
             for j in parent_to_children[i]:
@@ -109,8 +109,7 @@ class TaxaNetLoss(nn.Module):
         #tenseurs sur lesquels appliquer la cross-entropy loss:
         #levels_pred = [ torch.stack([y_pred[j] * levels_supports[i] for j in range(batch_size)])  for i in range(nbLevels)]
 
-        levels_pred = [ torch.stack(torch.tensor([y_pred[self.piquets[k-1]:self.piquets[k]] for i in range(batch_size)]))  for k in range(1,nbLevels)]
-        
+        levels_pred = [y_pred[:,self.piquets[k-1]:self.piquets[k]]  for k in range(1,nbLevels+1)]
 
         #création des cibles pour la cross entropy loss par niveau: numéro de la classe correcte
         def get_grandparents(n: int,id:int):
@@ -122,7 +121,7 @@ class TaxaNetLoss(nn.Module):
             return id
         
         levels_true = torch.stack([torch.stack ( [torch.tensor(get_grandparents(nbLevels - i,y)).to(device) for i in range(nbLevels)] ) for y in y_true])
-        levels_true = torch.transpose(levels_true)
+        levels_true = torch.transpose(levels_true,0,1)
         for k in range(1,nbLevels):
             levels_true[k] -= self.piquets[k]  #indice de la classe correcte dans un niveau
         
@@ -131,6 +130,7 @@ class TaxaNetLoss(nn.Module):
         #on itère d'abord sur chaque niveau hiérarchique
             sum = 0.0
             for i in range(1,batch_size):
+                #print("levels_pred size: ",len(levels_pred),",",levels_pred[0].size(),"\n \n H size:", self.H.size())
                 sum += (self.H[torch.argmax(levels_pred[k-1][i])][torch.argmax(levels_pred[k][i])] == 0)*np.e
             sum += ce_fn(levels_pred[k],levels_true[k]) 
             sum *= weights[k]
