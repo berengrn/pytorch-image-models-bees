@@ -247,7 +247,7 @@ if __name__ == "__main__":
 def classCounter(hierarchy_csv):
     with open(hierarchy_csv, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
-        NbClassesLevel = [0] * len(next(reader))
+        NbClassesLevel = [0] * len(reader.fieldnames)
         KnownItems = []
         for row in reader:
             for i,col in enumerate(row):
