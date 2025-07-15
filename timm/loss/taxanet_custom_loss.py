@@ -94,6 +94,7 @@ class TaxaNetLoss(nn.Module):
     
     def forward(self,y_pred,y_true):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.piquets = self.piquets.to(device)
         loss = 0.0
         sum = 0.0
         weights = [0.25, 0.25, 0.15, 0.1] #Les poids sont sans doute à re-tester pour notre dataset (pas les mêmes niveaux taxonomiques)
@@ -105,7 +106,9 @@ class TaxaNetLoss(nn.Module):
         C_total: Number of classes, all hierarchical levels combined
         nbLevels: Number of levels in the hierarchy
         """
-
+        print("y_true device:", y_true.device)
+        print("y_pred device:", y_pred.device)
+        
         levels_pred = [y_pred[:,self.piquets[k-1]:self.piquets[k]]  for k in range(1,nbLevels+1)]
 
         #création des cibles pour la cross entropy loss par niveau: numéro de la classe correcte
@@ -123,16 +126,16 @@ class TaxaNetLoss(nn.Module):
             return id
 
         y_true += self.piquets[-2] #dataset labels concern the lowest hierarchic level
-        levels_true = torch.stack([torch.stack ( [torch.tensor(get_grandparents(nbLevels - i,y)).to(device) for i in range(1,nbLevels+1)] ) for y in y_true])
+        levels_true = torch.stack([torch.stack ( [torch.tensor(get_grandparents(nbLevels - i,y),device=device) for i in range(1,nbLevels+1)] ) for y in y_true])
         levels_true = torch.transpose(levels_true,0,1)
         for k in range(nbLevels):
             levels_true[k] -= self.piquets[k]  #indice de la classe correcte dans un niveau
+        levels_true = levels_true.to(device)
         
         ce_fn = nn.CrossEntropyLoss()
         sum += ce_fn(levels_pred[0],levels_true[0])
         for k in range(1,nbLevels):
         #on itère d'abord sur chaque niveau hiérarchique
-            sum = 0.0
             for i in range(batch_size):
                 sum += (self.H[torch.argmax(levels_pred[k-1][i])][torch.argmax(levels_pred[k][i])] == 0)*np.e
             sum += ce_fn(levels_pred[k],levels_true[k]) 
