@@ -70,9 +70,6 @@ def BuildDictionaries(csv_path):
     #les piquets indiquent ou s'arrête chaque partie du vecteur correspondant à une niveau hiérarchique
     piquets = torch.cumsum(torch.tensor([0,n_ordres,n_familles,n_genres,n_especes]),0)
 
-    print("nb ordres,familles,genres,especes: ",n_ordres," ",n_familles," ",n_genres," ",n_especes)
-    print("piquets: ",piquets)
-
     return (parent_to_children,idx_all,piquets)
 
 def Build_H_Matrix(parent_to_children,piquets):
@@ -106,8 +103,6 @@ class TaxaNetLoss(nn.Module):
         C_total: Number of classes, all hierarchical levels combined
         nbLevels: Number of levels in the hierarchy
         """
-        print("y_true device:", y_true.device)
-        print("y_pred device:", y_pred.device)
         
         levels_pred = [y_pred[:,self.piquets[k-1]:self.piquets[k]]  for k in range(1,nbLevels+1)]
 

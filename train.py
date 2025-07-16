@@ -1257,6 +1257,24 @@ def train_one_epoch(
             loss, acc1, acc5 = _forward(args, last_batch, losses_dict)
             _backward(loss)
 
+        grad_log_path = os.path.join("output","gradient_log.txt")
+        grad_log_file = open(grad_log_path, "w")
+
+        if batch_idx % 10 == 0:  # Log tous les 10 batches
+            grad_log_file.write(f"\n=== Batch {batch_idx} ===\n")
+            for name, param in model.named_parameters():
+                if param.grad is not None:
+                    grad_norm = param.grad.norm().item()
+                    grad_mean = param.grad.mean().item()
+                    grad_std = param.grad.std().item()
+                    grad_max = param.grad.max().item()
+                    grad_log_file.write(
+                        f"{name:40s} | norm: {grad_norm:.4e} | mean: {grad_mean:.4e} | std: {grad_std:.4e} | max: {grad_max:.4e}\n"
+                    )
+                else:
+                    grad_log_file.write(f"{name:40s} | NO GRAD\n")
+            grad_log_file.flush()
+
         if losses_dict != None:
             losses_dict["loss"] = loss
             
