@@ -1165,6 +1165,9 @@ def train_one_epoch(
     optimizer.zero_grad()
     update_sample_count = 0
 
+    grad_log_path = os.path.join("output","gradient_log.txt")
+    grad_log_file = open(grad_log_path, "w")
+
     for batch_idx, (input, target) in enumerate(loader):
         last_batch = batch_idx == last_batch_idx
         need_update = last_batch or (batch_idx + 1) % accum_steps == 0
@@ -1257,10 +1260,12 @@ def train_one_epoch(
             loss, acc1, acc5 = _forward(args, last_batch, losses_dict)
             _backward(loss)
 
-        grad_log_path = os.path.join("output","gradient_log.txt")
-        grad_log_file = open(grad_log_path, "w")
+        for name, param in model.named_parameters():
+            if not param.requires_grad:
+                print(f"⚠️ {name} n'a pas requires_grad=True")
 
         if batch_idx % 10 == 0:  # Log tous les 10 batches
+            grad_log_file = open(grad_log_path, "a")
             grad_log_file.write(f"\n=== Batch {batch_idx} ===\n")
             for name, param in model.named_parameters():
                 if param.grad is not None:
@@ -1347,6 +1352,8 @@ def train_one_epoch(
         update_sample_count = 0
         data_start_time = time.time()
         # end for
+
+    grad_log_file.close()
 
     if hasattr(optimizer, 'sync_lookahead'):
         optimizer.sync_lookahead()

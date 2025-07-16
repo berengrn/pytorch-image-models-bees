@@ -127,13 +127,15 @@ class TaxaNetLoss(nn.Module):
             levels_true[k] -= self.piquets[k]  #indice de la classe correcte dans un niveau
         levels_true = levels_true.to(device)
         
-        ce_fn = nn.CrossEntropyLoss()
-        sum += ce_fn(levels_pred[0],levels_true[0])
+        #ce_fn = nn.CrossEntropyLoss()
+        #sum += ce_fn(levels_pred[0],levels_true[0])
+        sum = torch.tensor(0.0, device=device)
         for k in range(1,nbLevels):
         #on itère d'abord sur chaque niveau hiérarchique
             for i in range(batch_size):
                 sum += (self.H[torch.argmax(levels_pred[k-1][i])][torch.argmax(levels_pred[k][i])] == 0)*np.e
-            sum += ce_fn(levels_pred[k],levels_true[k]) 
+            sum /= batch_size #mean over the batch
+            #sum += ce_fn(levels_pred[k],levels_true[k]) 
             sum *= weights[k]
             loss += sum
 
