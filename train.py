@@ -1262,7 +1262,7 @@ def train_one_epoch(
 
         for name, param in model.named_parameters():
             if not param.requires_grad:
-                print(f"⚠️ {name} n'a pas requires_grad=True")
+                print(f" {name} n'a pas requires_grad=True")
 
         if batch_idx % 10 == 0:  # Log tous les 10 batches
             grad_log_file = open(grad_log_path, "a")
