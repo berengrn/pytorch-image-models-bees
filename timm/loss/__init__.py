@@ -7,3 +7,4 @@ from .jsd import JsdCrossEntropy
 from .logicseg_loss import LogicSegLoss
 from .hierarchical_cross_entropy import HierarchicalCrossEntropy
 from .taxanet_custom_loss import TaxaNetLoss, BuildDictionaries
+from .hierarchical_jsd import HierarchicalJsd

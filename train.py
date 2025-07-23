@@ -38,7 +38,7 @@ from torch.nn.parallel import DistributedDataParallel as NativeDDP
 from timm import utils
 from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
 from timm.layers import convert_splitbn_model, convert_sync_batchnorm, set_fast_norm
-from timm.loss import JsdCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy, LabelSmoothingCrossEntropy, LogicSegLoss, HierarchicalCrossEntropy, TaxaNetLoss
+from timm.loss import JsdCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy, LabelSmoothingCrossEntropy, LogicSegLoss, HierarchicalCrossEntropy, TaxaNetLoss, HierarchicalJsd
 from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint, model_parameters
 from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler_v2, scheduler_kwargs
@@ -353,6 +353,9 @@ group.add_argument('--csv-tree', default=None,
                    help='path to csv describing the tree structure of the labels.')
 group.add_argument('--softlabels', action='store_true', default=False,
     help='Convert ground-truth labels to soft labels before calculating the loss.')
+
+group.add_argument('--hierarchy-jse', action='store_true', default=False,
+                   help='Loss using JSE divergence for Hierarchical classification')
 
 group.add_argument('--custom-loss', action='store_true', default=False,
                    help='Custom loss for taxanomic Hierarchical classification')
@@ -890,6 +893,12 @@ def main():
     elif args.custom_loss:
         if args.hierarchy:
             train_loss_fn = TaxaNetLoss(args.hierarchy)
+        else:
+            print("error:please specify hierarchy csv file to use custom hierachical loss")
+            exit(1)
+    elif args.hierarchy_jse:
+        if args.hierarchy:
+            train_loss_fn = HierarchicalJsd(args.hierarchy)
         else:
             print("error:please specify hierarchy csv file to use custom hierachical loss")
             exit(1)

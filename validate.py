@@ -27,7 +27,7 @@ from timm.layers import apply_test_time_pool, set_fast_norm
 from timm.models import create_model, load_checkpoint, is_model, list_models
 from timm.utils import accuracy, AverageMeter, natural_key, setup_default_logging, set_jit_fuser, \
     decay_batch_step, check_batch_size_retry, ParseKwargs, reparameterize_model
-from timm.loss import taxanet_custom_loss
+from timm.loss import taxanet_custom_loss, HierarchicalJsd
 
 try:
     from apex import amp
@@ -164,6 +164,8 @@ parser.add_argument('--hierarchy', default='', type=str, metavar='HIERARCHY',
                    help='hierarchy csv file')
 parser.add_argument('--custom-loss', action='store_true', default=False,
                    help='Custom loss for taxanomic Hierarchical classification')
+parser.add_argument('--hierarchy-jse', action='store_true', default=False,
+                   help='Loss using JSE divergence for Hierarchical classification')
 
 
 def validate(args):
@@ -272,6 +274,12 @@ def validate(args):
     if args.custom_loss:
         if args.hierarchy:
             criterion = taxanet_custom_loss(args.hierarchy)
+        else:
+            print("ERROR: please specify a hierarchy mapping csv file in order to use hierarchical loss")
+            exit(1)
+    if args.hierarchy_jse:
+        if args.hierarchy:
+            criterion = HierarchicalJsd(args.hierarchy)
         else:
             print("ERROR: please specify a hierarchy mapping csv file in order to use hierarchical loss")
             exit(1)
