@@ -1226,7 +1226,7 @@ def train_one_epoch(
                     # compute top-1 and top-5 accuracy
                     acc1 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=1)
                     acc5 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=5)
-                elif args.custom_loss and args.smoothing == 0.0:
+                elif (args.custom_loss or args.hierarchy_jse) and args.smoothing == 0.0:
                     acc1,acc5 = utils.accuracy(output,target, topk=(1, 5))
                     acc1 = acc1 / 100
                     acc5 = acc5 / 100
