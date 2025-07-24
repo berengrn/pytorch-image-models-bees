@@ -910,6 +910,12 @@ def main():
                 sum_classes=args.bce_sum,
                 pos_weight=args.bce_pos_weight,
             )
+        if args.hierarchy_jse:
+            if args.hierarchy:
+                train_loss_fn = HierarchicalJsd(args.hierarchy, smoothing=args.smoothing)
+            else:
+                print("error:please specify hierarchy csv file to use custom hierachical loss")
+                exit(1)
         else:
             train_loss_fn = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
     else:
@@ -1226,7 +1232,7 @@ def train_one_epoch(
                     # compute top-1 and top-5 accuracy
                     acc1 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=1)
                     acc5 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=5)
-                elif (args.custom_loss or args.hierarchy_jse) and args.smoothing == 0.0:
+                elif (args.custom_loss or args.hierarchy_jse) and not args.smoothing:
                     acc1,acc5 = utils.accuracy(output,target, topk=(1, 5))
                     acc1 = acc1 / 100
                     acc5 = acc5 / 100
@@ -1234,7 +1240,12 @@ def train_one_epoch(
                     acc1, acc5 = utils.accuracy(output, torch.argmax(target, dim=1), topk=(1, 5))
                     acc1 = acc1 / 100
                     acc5 = acc5 / 100
-                    
+            #print("Logits max:", output.max().item())
+            #print("Logits min:", output.min().item(),"\n\n")
+
+            if torch.isnan(loss).any():
+                exit(1)
+
             if accum_steps > 1:
                 loss /= accum_steps
             return loss, acc1, acc5

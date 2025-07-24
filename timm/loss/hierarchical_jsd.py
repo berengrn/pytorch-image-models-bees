@@ -6,6 +6,7 @@ import os
 import csv
 
 from collections import defaultdict
+from .jsd import JsdCrossEntropy
 
 def BuildDictionaries(csv_path):
 
@@ -73,13 +74,12 @@ class HierarchicalJsd(nn.Module):
     """
     param: csv_path: chemin vers le fichier .csv contenant la hiérarchie des classes
     """
-
-
-    def __init__(self,csv_path):
+    def __init__(self,csv_path,smoothing=0.0):
         super().__init__()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         parent_to_children,_,self.piquets = BuildDictionaries(csv_path)
         self.H = Build_H_Matrix(parent_to_children,self.piquets).to(device)
+        self.smoothing = smoothing
 
     def forward(self,y_pred,target): 
         """
@@ -88,6 +88,7 @@ class HierarchicalJsd(nn.Module):
         """
         device = target.device
         nbLevels = len(self.piquets) - 1
+        epsilon = torch.tensor(1e-7,device=device)
 
         #probabilité d'une classe en fonction des probabilités prédites pour ses enfants:
         children_preds = (self.H[:self.piquets[-2],:] @ y_pred.t()).t()
@@ -97,8 +98,8 @@ class HierarchicalJsd(nn.Module):
         levels_children = [children_preds[:,self.piquets[i]:self.piquets[i+1]] for i in range(nbLevels - 1)]
 
         #logs pour le softmax
-        log_levels_pred = [F.log_softmax(level,dim=1) for level in levels_pred]
-        log_levels_children = [F.log_softmax(level,dim=1) for level in levels_children]
+        log_levels_pred = [F.log_softmax(level + epsilon,dim=1) for level in levels_pred]
+        log_levels_children = [F.log_softmax(level + epsilon,dim=1) for level in levels_children]
         
         #targets pour chaque niveau
         def get_grandparents(n: int,id:int): #return the id of the parent from the n-th level above
@@ -119,22 +120,29 @@ class HierarchicalJsd(nn.Module):
         levels_target = torch.transpose(levels_target,0,1)
         for k in range(nbLevels):
             levels_target[k] -= self.piquets[k]  #indice de la classe correcte dans un niveau
-        #levels_target = levels_target.to(device)
 
 
         loss,kl_penalty = torch.tensor(0.0,device=device),torch.tensor(0.0,device=device)
-        kl_loss = torch.nn.KLDivLoss(reduction='mean')
-        ce_fn = nn.CrossEntropyLoss()
+        kl_loss = torch.nn.KLDivLoss(reduction='mean',log_target=True)
+
+        if self.smoothing > 0.0:
+            classic_loss = LabelSmoothingCrossEntropy(smoothing=self.smoothing)
+        else:
+            classic_loss = nn.CrossEntropyLoss()
 
         for k in range(nbLevels - 1):
             #turn levels_pred and levels_children into "probability distributions":
 
             #Divergence de Jensen-Shannon:
-            kl_penalty += 0.5*(kl_loss(log_levels_pred[k], F.softmax(levels_children[k],dim=1) ) 
-                                + kl_loss(log_levels_children[k], F.softmax(levels_pred[k],dim=1)) )
+            kl_penalty += 0.5*(kl_loss(log_levels_pred[k], log_levels_children[k]) 
+            + kl_loss(log_levels_children[k], log_levels_pred[k]))
 
-            loss += 0.5*ce_fn(levels_pred[k],levels_target[k])
-        loss += 0.5*ce_fn(levels_pred[-1],levels_target[-1])
+            loss += 0.5*classic_loss(levels_pred[k],levels_target[k])
+        loss += 0.5*classic_loss(levels_pred[-1],levels_target[-1])
 
         loss += 0.5*kl_penalty
+
+        #print(" kl_penalty: ",kl_penalty.item(),"\n XE loss: ",loss.item() - kl_penalty.item())
+        if torch.isnan(loss):
+            exit(1)
         return loss

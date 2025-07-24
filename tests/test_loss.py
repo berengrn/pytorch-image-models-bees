@@ -4,10 +4,6 @@ import numpy as np
 import os
 
 from pathlib import Path
-
-# Ajoute le dossier racine du projet (2 niveaux au-dessus du script)
-#sys.path.append(str(Path(__file__).resolve().parents[2]))
-
 from timm.loss.hierarchical_jsd import HierarchicalJsd
 
 hierarchy_csv = os.path.join(os.getcwd(),"hierarchy_test.csv")
