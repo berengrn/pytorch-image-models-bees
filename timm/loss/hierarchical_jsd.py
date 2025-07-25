@@ -76,9 +76,10 @@ class HierarchicalJsd(nn.Module):
     """
     def __init__(self,csv_path,smoothing=0.0):
         super().__init__()
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         parent_to_children,_,self.piquets = BuildDictionaries(csv_path)
-        self.H = Build_H_Matrix(parent_to_children,self.piquets).to(device)
+        self.piquets = torch.from_numpy(self.piquets).to(self.device)
+        self.H = Build_H_Matrix(parent_to_children,self.piquets).to(self.device)
         self.smoothing = smoothing
 
     def forward(self,y_pred,target): 
@@ -86,7 +87,9 @@ class HierarchicalJsd(nn.Module):
         :param target: Tensor de forme (batch_size,) avec les indices des classes cibles pour le dernier niveau.
         (les niveaux supérieurs seront retrouvés automatiquement a partir de la hiérarchie)
         """
-        device = target.device
+        #device = target.device
+        device = self.device
+        y_pred, target = y_pred.to(device), target.to(device)
         nbLevels = len(self.piquets) - 1
         epsilon = torch.tensor(1e-7,device=device)
 

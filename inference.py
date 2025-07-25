@@ -239,6 +239,12 @@ def main():
     if args.fuser:
         set_jit_fuser(args.fuser)
 
+    #getting the path to the hierarchy.csv, to give it as a kwarg for our hierarchical classification model
+    if args.csv_tree:
+        if not hasattr(args, "model_kwargs"):
+            args.model_kwargs = {}
+        args.model_kwargs["hierarchy"] = args.csv_tree
+
     # create model
     in_chans = 3
     if args.in_chans is not None:
@@ -433,6 +439,8 @@ def main():
 
                 metrics_hierarchy.compute_all_metrics(output, new_targets.to(device), augmented_output.to(device), La_raw, augmented_targets)
                 print(metrics_hierarchy.get_metrics_string())
+
+            ##
 
             if top_k and not args.logicseg:
                 output, indices = output.topk(top_k)
