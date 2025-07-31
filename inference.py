@@ -289,7 +289,7 @@ def main():
     if args.num_gpu > 1:
         model = torch.nn.DataParallel(model, device_ids=list(range(args.num_gpu)))
 
-    root_dir = args.data_dir# args.data or args.data_dir
+    root_dir = args.data_dir # args.data or args.data_dir
     dataset = create_dataset(
         root=root_dir,
         name=args.dataset,
@@ -433,7 +433,11 @@ def main():
                 classes = load_classnames(args.class_map)
                 _, node_to_index, _ = get_label_matrix(args.csv_tree)
 
-                new_targets = format_target(target, args.num_classes).T 
+                new_targets = format_target(target, args.num_classes).T
+
+                if args.multitask == True: #If model output contains predictions for several hierarchic levels
+                    output = output[:,- args.num_classes :]
+
                 augmented_output = add_nodes_to_output(args.csv_tree, output, classes, node_to_index).T
                 augmented_targets = add_nodes_to_output(args.csv_tree, new_targets, classes, node_to_index).T
 

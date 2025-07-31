@@ -890,15 +890,11 @@ def main():
             )
         else:
             train_loss_fn = SoftTargetCrossEntropy()
-    elif args.custom_loss:
-        if args.hierarchy:
-            train_loss_fn = TaxaNetLoss(args.hierarchy)
-        else:
-            print("error:please specify hierarchy csv file to use custom hierachical loss")
-            exit(1)
     elif args.hierarchy_jse:
         if args.hierarchy:
             train_loss_fn = HierarchicalJsd(args.hierarchy)
+        if args.smoothing:
+            train_loss_fn.smoothing = args.smoothing
         else:
             print("error:please specify hierarchy csv file to use custom hierachical loss")
             exit(1)
