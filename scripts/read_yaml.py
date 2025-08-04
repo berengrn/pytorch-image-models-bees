@@ -43,27 +43,27 @@ def compute_model_name(filepath):
         crule_loss_weight = data["crule_loss_weight"]
         if message_passing:
             if method == "bce":
-                return fr"LogicSeg MP (BCE, $\alpha$={crule_loss_weight})", fr"logicseg_bce_mp{str(crule_loss_weight).replace(".", "_").replace(" ", "_")}"
+                return fr"LogicSeg MP (BCE, $\alpha$={crule_loss_weight})", fr"logicseg_bce_mp{str(crule_loss_weight).replace('.', '_').replace(' ', '_')}"
             elif method == "multi_bce":
-                return fr"LogicSeg MP (Multi BCE, $\alpha$={crule_loss_weight})", fr"logicseg_multibce_mp{str(crule_loss_weight).replace(".", "_").replace(" ", "_")}"
+                return fr"LogicSeg MP (Multi BCE, $\alpha$={crule_loss_weight})", fr"logicseg_multibce_mp{str(crule_loss_weight).replace('.', '_').replace(' ', '_')}"
             else:
-                return fr"LogicSeg MP ($\alpha$={crule_loss_weight})", fr"logicseg{str(crule_loss_weight).replace(".", "_").replace(" ", "_")}"
+                return fr"LogicSeg MP ($\alpha$={crule_loss_weight})", fr"logicseg{str(crule_loss_weight).replace('.', '_').replace(' ', '_')}"
         else:
             if method == "bce":
-                return fr"LogicSeg (BCE, $\alpha$={crule_loss_weight})", fr"logicseg_bce{str(crule_loss_weight).replace(".", "_").replace(" ", "_")}"
+                return fr"LogicSeg (BCE, $\alpha$={crule_loss_weight})", fr"logicseg_bce{str(crule_loss_weight).replace('.', '_').replace(' ', '_')}"
             elif method == "multi_bce":
-                return fr"LogicSeg (Multi BCE, $\alpha$={crule_loss_weight})", fr"logicseg_multibce{str(crule_loss_weight).replace(".", "_").replace(" ", "_")}"
+                return fr"LogicSeg (Multi BCE, $\alpha$={crule_loss_weight})", fr"logicseg_multibce{str(crule_loss_weight).replace('.', '_').replace(' ', '_')}"
             else:
-                return fr"LogicSeg ($\alpha$={crule_loss_weight})", fr"logicseg{str(crule_loss_weight).replace(".", "_").replace(" ", "_")}"
+                return fr"LogicSeg ($\alpha$={crule_loss_weight})", fr"logicseg{str(crule_loss_weight).replace('.', '_').replace(' ', '_')}"
     elif softlabel:
         softlabels_beta = data["softlabels_beta"]
-        return fr"Soft Label ($\beta$={softlabels_beta})", f'soft_label_{str(softlabels_beta).replace(".", "_").replace(" ", "_")}'
+        return fr"Soft Label ($\beta$={softlabels_beta})", f'soft_label_{str(softlabels_beta).replace('.', '_').replace(' ', '_')}'
     else:
         hce = data["hce_loss"]
         bce = data["bce_loss"]
         hce_alpha = data["hce_alpha"]
         if hce:
-            return fr"HCE ($\alpha$={hce_alpha})", f'hce_alpha_{str(hce_alpha).replace(".", "_").replace(" ", "_")}'
+            return fr"HCE ($\alpha$={hce_alpha})", f'hce_alpha_{str(hce_alpha).replace('.', '_').replace(' ', '_')}'
         elif bce:
             return "BCE", "bce"
         else:
