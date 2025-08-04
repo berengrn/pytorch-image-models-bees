@@ -57,13 +57,13 @@ def compute_model_name(filepath):
                 return fr"LogicSeg ($\alpha$={crule_loss_weight})", fr"logicseg{str(crule_loss_weight).replace('.', '_').replace(' ', '_')}"
     elif softlabel:
         softlabels_beta = data["softlabels_beta"]
-        return fr"Soft Label ($\beta$={softlabels_beta})", f'soft_label_{str(softlabels_beta).replace('.', '_').replace(' ', '_')}'
+        return fr"Soft Label ($\beta$={softlabels_beta})", f"soft_label_{str(softlabels_beta).replace('.', '_').replace(' ', '_')}"
     else:
         hce = data["hce_loss"]
         bce = data["bce_loss"]
         hce_alpha = data["hce_alpha"]
         if hce:
-            return fr"HCE ($\alpha$={hce_alpha})", f'hce_alpha_{str(hce_alpha).replace('.', '_').replace(' ', '_')}'
+            return fr"HCE ($\alpha$={hce_alpha})", f"hce_alpha_{str(hce_alpha).replace('.', '_').replace(' ', '_')}"
         elif bce:
             return "BCE", "bce"
         else:
