@@ -279,7 +279,7 @@ def validate(args):
 
     if args.hierarchy_jse:
         if args.hierarchy:
-            criterion = HierarchicalJsd(args.hierarchy)
+            criterion = HierarchicalJsd(args.hierarchy).to(device)
         else:
             print("ERROR: please specify a hierarchy mapping csv file in order to use hierarchical loss")
             exit(1)

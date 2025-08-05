@@ -139,7 +139,10 @@ parser.add_argument('--message-passing', action='store_true', default=False,
                    help='Apply logicseg message passing processing to output.')
 parser.add_argument('--message-passing-iter-count', type=int, default=2,
                    help='number of iteration of the message passing.')
+
 parser.add_argument('--csv-tree', default="", help="Path to hierarchy csv")
+parser.add_argument('--multitask',default=False, type=bool,help= 'specifies if model is a multitask classifier, ' + 
+'in this case, assumes the last num-classes components of output vector are the predictions for the classes')
 
 scripting_group = parser.add_mutually_exclusive_group()
 scripting_group.add_argument('--torchscript', default=False, action='store_true',
