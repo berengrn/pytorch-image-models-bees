@@ -216,6 +216,12 @@ def validate(args):
     elif args.input_size is not None:
         in_chans = args.input_size[0]
 
+    #getting the path to the hierarchy.csv, to give it as a kwarg for our hierarchical classification model
+    if args.hierarchy:
+        if not hasattr(args, "model_kwargs"):
+            args.model_kwargs = {}
+        args.model_kwargs["hierarchy"] = args.hierarchy
+
     model = create_model(
         args.model,
         pretrained=args.pretrained,
@@ -271,12 +277,6 @@ def validate(args):
 
     #criterion = nn.CrossEntropyLoss().to(device)
 
-    if args.custom_loss:
-        if args.hierarchy:
-            criterion = taxanet_custom_loss(args.hierarchy)
-        else:
-            print("ERROR: please specify a hierarchy mapping csv file in order to use hierarchical loss")
-            exit(1)
     if args.hierarchy_jse:
         if args.hierarchy:
             criterion = HierarchicalJsd(args.hierarchy)
