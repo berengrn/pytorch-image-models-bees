@@ -15,7 +15,7 @@ y_true = torch.tensor([[0,2,5,9],
                        [0,3,7,11]])
                        """
 
-y_true = F.normalize(torch.tensor([[0.5,0.5,0.,0.], #résultat parfait
+y_true = F.normalize(torch.tensor([[5.,0.,0.,0.], #résultat parfait
                           [0.,5.,0.,0.],  
                           [0.,0.,5.,0.]
                         ]),dim=1)

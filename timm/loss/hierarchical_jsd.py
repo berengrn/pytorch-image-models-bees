@@ -7,6 +7,7 @@ import csv
 
 from collections import defaultdict
 from .jsd import JsdCrossEntropy
+from .cross_entropy import SoftTargetCrossEntropy
 
 def BuildDictionaries(csv_path):
 
@@ -99,11 +100,13 @@ class HierarchicalJsd(nn.Module):
         levels_target = [target[:,:self.leaf_classes]]
         for l in range(nbLevels - 1, 0, -1):
             level = (self.H[self.piquets[l-1]:self.piquets[l],self.piquets[l]:self.piquets[l+1]] @ levels_target[0].t()).t()
+            F.normalize(level) #dans la pratique les coefficients ne somment pas excatement à 1
             levels_target.insert(0,level)
 
         loss,kl_penalty = torch.tensor(0.0,device=device),torch.tensor(0.0,device=device)
         kl_loss = torch.nn.KLDivLoss(reduction='mean',log_target=True)
-        classic_loss = torch.nn.KLDivLoss(reduction='mean')
+        #classic_loss = torch.nn.KLDivLoss(reduction='mean')
+        classic_loss = SoftTargetCrossEntropy()
 
         for k in range(nbLevels - 1):
             #turn levels_pred and levels_children into "probability distributions":
@@ -113,8 +116,8 @@ class HierarchicalJsd(nn.Module):
             + kl_loss(log_levels_children[k], log_levels_pred[k]))
 
             loss += (1 - self.hier_weight)*classic_loss(log_levels_pred[k],levels_target[k])
-        loss += (1 - self.hier_weight)*classic_loss(log_levels_pred[-1],levels_target[-1])
 
+        loss += (1 - self.hier_weight)*classic_loss(log_levels_pred[-1],levels_target[-1])
         loss += (self.hier_weight)*kl_penalty
 
         if torch.isnan(loss):
