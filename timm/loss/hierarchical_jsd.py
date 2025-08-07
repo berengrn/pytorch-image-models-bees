@@ -22,18 +22,12 @@ def BuildDictionaries(csv_path):
             for i in range(nbLevels):
                 if row[i] not in levels[i]:
                     levels[i].append(row[i])
-        #print("levels: ",levels)
         
         csvfile.seek(0)
         reader = csv.reader(csvfile)
         next(reader)
         for row in reader:
             data.append([row[i] for i in range(nbLevels)])
-
-        #print("data: ",data)
-
-        #print("levels shape:",len(levels),"x",len(levels[-1]))
-        #print("data shape:",len(data),len(data[0]))
    
     # Calcule l'offset pour chaque niveau
     offsets = np.cumsum(np.array([0] + [len(l) for l in levels]))
@@ -41,10 +35,6 @@ def BuildDictionaries(csv_path):
     idxs = {}
     for l in level_idxs:
         idxs |= l
-    #print("level_idxs: ",level_idxs,"\n\nidxs: ",idxs)
-
-    # Fusion pour accès global
-    #idx_all = {**idx_ordres, **idx_familles, **idx_genres, **idx_especes}
 
     parent_to_children = defaultdict(set)
 
@@ -53,12 +43,10 @@ def BuildDictionaries(csv_path):
             parent_to_children[idxs[info[i]]].add(idxs[info[i+1]])
 
     parent_to_children = {k: list(v) for k, v in parent_to_children.items()}
-    #print("parent_to_children: ",parent_to_children)
 
     return (parent_to_children,idxs,offsets)
 
 def Build_H_Matrix(parent_to_children,piquets):
-    #print("piquets: ",piquets)
     #H[i][j] == 1 iff i parent of j, else 0
     N = piquets[-1]
     H = torch.zeros((N,N))
@@ -83,6 +71,7 @@ class HierarchicalJsd(nn.Module):
         parent_to_children,_,self.piquets = BuildDictionaries(csv_path)
         self.piquets = torch.from_numpy(self.piquets).to(self.device)
         self.H = Build_H_Matrix(parent_to_children,self.piquets).to(self.device)
+        self.leaf_classes = self.piquets[-1] - self.piquets[-2]
         self.smoothing = smoothing
         self.hier_weight = hier_weight
 
@@ -91,7 +80,6 @@ class HierarchicalJsd(nn.Module):
         :param: target: DOIT ETRE UNE SOFT TARGET Tensor de forme (batch_size,num_leave_classes)
         (les niveaux supérieurs seront retrouvés automatiquement a partir de la hiérarchie)
         """
-        #device = target.device
         device = self.device
         y_pred, target = y_pred.to(device), target.to(device)
         nbLevels = len(self.piquets) - 1
@@ -108,11 +96,10 @@ class HierarchicalJsd(nn.Module):
         log_levels_pred = [F.log_softmax(level + epsilon,dim=1) for level in levels_pred]
         log_levels_children = [F.log_softmax(level + epsilon,dim=1) for level in levels_children]
         
-        levels_target = [target[:,:79]]
+        levels_target = [target[:,:self.leaf_classes]]
         for l in range(nbLevels - 1, 0, -1):
             level = (self.H[self.piquets[l-1]:self.piquets[l],self.piquets[l]:self.piquets[l+1]] @ levels_target[0].t()).t()
             levels_target.insert(0,level)
-
 
         loss,kl_penalty = torch.tensor(0.0,device=device),torch.tensor(0.0,device=device)
         kl_loss = torch.nn.KLDivLoss(reduction='mean',log_target=True)
@@ -125,7 +112,7 @@ class HierarchicalJsd(nn.Module):
             kl_penalty += 0.5*(kl_loss(log_levels_pred[k], log_levels_children[k]) 
             + kl_loss(log_levels_children[k], log_levels_pred[k]))
 
-            loss += 0.5*classic_loss(log_levels_pred[k],levels_target[k])
+            loss += (1 - self.hier_weight)*classic_loss(log_levels_pred[k],levels_target[k])
         loss += (1 - self.hier_weight)*classic_loss(log_levels_pred[-1],levels_target[-1])
 
         loss += (self.hier_weight)*kl_penalty
