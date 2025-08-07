@@ -356,11 +356,10 @@ group.add_argument('--softlabels', action='store_true', default=False,
 
 group.add_argument('--hierarchy-jse', action='store_true', default=False,
                    help='Loss using JSE divergence for Hierarchical classification')
-
-group.add_argument('--custom-loss', action='store_true', default=False,
-                   help='Custom loss for taxanomic Hierarchical classification')
 group.add_argument('--hierarchy', default='', type=str, metavar='HIERARCHY',
                    help='hierarchy csv file')
+group.add_argument("--leaf-classes", type = int, default = None, help = "number of classes for the last hierarchical level")
+group.add_argument("--hier-weight", default=0.5, type= float, help="weight of the hierarchical penalty in the hierarchical JSE loss")
 
 group.add_argument('--crule-loss-weight', type=float, default=0.2,
                    help='Set the weight of the Closs.')
@@ -563,9 +562,11 @@ def main():
     if args.head_init_bias is not None:
         nn.init.constant_(model.get_classifier().bias, args.head_init_bias)
 
-    if args.num_classes is None:
+    if args.num_classes is None and args.leaf_classes is None:
         assert hasattr(model, 'num_classes'), 'Model must have `num_classes` attr if not set on cmd line/config.'
         args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
+    elif args.leaf_classes:
+        args.num_classes = args.leaf_classes
 
     if args.grad_checkpointing:
         model.set_grad_checkpointing(enable=True)
@@ -888,15 +889,19 @@ def main():
                 sum_classes=args.bce_sum,
                 pos_weight=args.bce_pos_weight,
             )
+        if args.hierarchy_jse:
+            if args.hierarchy:
+                train_loss_fn = HierarchicalJsd(args.hierarchy, args.smoothing, args.hier_weight)
+            else:
+                print("error:please specify hierarchy csv file to use hierachical loss")
+                exit(1)        
         else:
             train_loss_fn = SoftTargetCrossEntropy()
     elif args.hierarchy_jse:
         if args.hierarchy:
-            train_loss_fn = HierarchicalJsd(args.hierarchy)
-        if args.smoothing:
-            train_loss_fn.smoothing = args.smoothing
+            train_loss_fn = HierarchicalJsd(args.hierarchy, args.smoothing, args.hier_weight)
         else:
-            print("error:please specify hierarchy csv file to use custom hierachical loss")
+            print("error:please specify hierarchy csv file to use hierachical loss")
             exit(1)
     elif args.smoothing:
         if args.bce_loss:
@@ -1180,6 +1185,7 @@ def train_one_epoch(
     grad_log_file = open(grad_log_path, "w")
 
     for batch_idx, (input, target) in enumerate(loader):
+
         last_batch = batch_idx == last_batch_idx
         need_update = last_batch or (batch_idx + 1) % accum_steps == 0
         update_idx = batch_idx // accum_steps
@@ -1228,7 +1234,7 @@ def train_one_epoch(
                     # compute top-1 and top-5 accuracy
                     acc1 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=1)
                     acc5 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=5)
-                elif (args.custom_loss or args.hierarchy_jse) and not (args.mixup or args.cutmix):
+                elif (args.hierarchy_jse) and not (args.mixup or args.cutmix):
                     acc1,acc5 = utils.accuracy(output,target, topk=(1, 5))
                     acc1 = acc1 / 100
                     acc5 = acc5 / 100
@@ -1236,8 +1242,6 @@ def train_one_epoch(
                     acc1, acc5 = utils.accuracy(output, torch.argmax(target, dim=1), topk=(1, 5))
                     acc1 = acc1 / 100
                     acc5 = acc5 / 100
-            #print("Logits max:", output.max().item())
-            #print("Logits min:", output.min().item(),"\n\n")
 
             if torch.isnan(loss).any():
                 exit(1)

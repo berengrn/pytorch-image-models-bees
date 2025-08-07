@@ -73,18 +73,22 @@ def Build_H_Matrix(parent_to_children,piquets):
 class HierarchicalJsd(nn.Module):
     """
     param: csv_path: chemin vers le fichier .csv contenant la hiérarchie des classes
+    hier_weight: weight of the hierarchical penalty. the weight of the "classic loss" is (1 - hier_weight)
+    0.0 makes the loss a KLdivLoss
+    
     """
-    def __init__(self,csv_path,smoothing=0.0):
+    def __init__(self,csv_path,smoothing=0.1,hier_weight=0.5):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         parent_to_children,_,self.piquets = BuildDictionaries(csv_path)
         self.piquets = torch.from_numpy(self.piquets).to(self.device)
         self.H = Build_H_Matrix(parent_to_children,self.piquets).to(self.device)
         self.smoothing = smoothing
+        self.hier_weight = hier_weight
 
     def forward(self,y_pred,target): 
         """
-        :param target: Tensor de forme (batch_size,) avec les indices des classes cibles pour le dernier niveau.
+        :param: target: DOIT ETRE UNE SOFT TARGET Tensor de forme (batch_size,num_leave_classes)
         (les niveaux supérieurs seront retrouvés automatiquement a partir de la hiérarchie)
         """
         #device = target.device
@@ -104,34 +108,15 @@ class HierarchicalJsd(nn.Module):
         log_levels_pred = [F.log_softmax(level + epsilon,dim=1) for level in levels_pred]
         log_levels_children = [F.log_softmax(level + epsilon,dim=1) for level in levels_children]
         
-        #targets pour chaque niveau
-        def get_grandparents(n: int,id:int): #return the id of the parent from the n-th level above
-            if n==0: return id
-            N = self.H.size()[0]
-            if n >= len(self.piquets) - 1: 
-                print("erreur de get_grandparents")
-                exit(1)
-            for k in range(n):
-                for j in range(N):
-                    if self.H[j][id] == 1:
-                        id = j
-                        break
-            return id
-        
-        target += self.piquets[-2] #dataset labels concern the lowest hierarchic level
-        levels_target = torch.stack([torch.stack ( [torch.tensor(get_grandparents(nbLevels - i,y),device=device) for i in range(1,nbLevels+1)] ) for y in target])
-        levels_target = torch.transpose(levels_target,0,1)
-        for k in range(nbLevels):
-            levels_target[k] -= self.piquets[k]  #indice de la classe correcte dans un niveau
+        levels_target = [target[:,:79]]
+        for l in range(nbLevels - 1, 0, -1):
+            level = (self.H[self.piquets[l-1]:self.piquets[l],self.piquets[l]:self.piquets[l+1]] @ levels_target[0].t()).t()
+            levels_target.insert(0,level)
 
 
         loss,kl_penalty = torch.tensor(0.0,device=device),torch.tensor(0.0,device=device)
         kl_loss = torch.nn.KLDivLoss(reduction='mean',log_target=True)
-
-        if self.smoothing > 0.0:
-            classic_loss = LabelSmoothingCrossEntropy(smoothing=self.smoothing)
-        else:
-            classic_loss = nn.CrossEntropyLoss()
+        classic_loss = kl_loss
 
         for k in range(nbLevels - 1):
             #turn levels_pred and levels_children into "probability distributions":
@@ -141,11 +126,10 @@ class HierarchicalJsd(nn.Module):
             + kl_loss(log_levels_children[k], log_levels_pred[k]))
 
             loss += 0.5*classic_loss(levels_pred[k],levels_target[k])
-        loss += 0.5*classic_loss(levels_pred[-1],levels_target[-1])
+        loss += (1 - self.hier_weight)*classic_loss(levels_pred[-1],levels_target[-1])
 
-        loss += 0.5*kl_penalty
+        loss += (self.hier_weight)*kl_penalty
 
-        #print(" kl_penalty: ",kl_penalty.item(),"\n XE loss: ",loss.item() - kl_penalty.item())
         if torch.isnan(loss):
             exit(1)
         return loss

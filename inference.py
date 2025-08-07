@@ -141,7 +141,7 @@ parser.add_argument('--message-passing-iter-count', type=int, default=2,
                    help='number of iteration of the message passing.')
 
 parser.add_argument('--csv-tree', default="", help="Path to hierarchy csv")
-parser.add_argument('--multitask',default=False, type=bool,help= 'specifies if model is a multitask classifier, ' + 
+parser.add_argument('--multitask',default=False, type=bool, help= 'specifies if model is a multitask classifier, ' + 
 'in this case, assumes the last num-classes components of output vector are the predictions for the classes')
 
 scripting_group = parser.add_mutually_exclusive_group()
@@ -439,7 +439,7 @@ def main():
                 new_targets = format_target(target, args.num_classes).T
 
                 if args.multitask == True: #If model output contains predictions for several hierarchic levels
-                    output = output[:,- args.num_classes :]
+                    output = output[:,- args.num_classes:]
 
                 augmented_output = add_nodes_to_output(args.csv_tree, output, classes, node_to_index).T
                 augmented_targets = add_nodes_to_output(args.csv_tree, new_targets, classes, node_to_index).T
