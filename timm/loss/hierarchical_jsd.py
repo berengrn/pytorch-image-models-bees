@@ -116,7 +116,7 @@ class HierarchicalJsd(nn.Module):
 
         loss,kl_penalty = torch.tensor(0.0,device=device),torch.tensor(0.0,device=device)
         kl_loss = torch.nn.KLDivLoss(reduction='mean',log_target=True)
-        classic_loss = kl_loss
+        classic_loss = torch.nn.KLDivLoss(reduction='mean')
 
         for k in range(nbLevels - 1):
             #turn levels_pred and levels_children into "probability distributions":
@@ -125,8 +125,8 @@ class HierarchicalJsd(nn.Module):
             kl_penalty += 0.5*(kl_loss(log_levels_pred[k], log_levels_children[k]) 
             + kl_loss(log_levels_children[k], log_levels_pred[k]))
 
-            loss += 0.5*classic_loss(levels_pred[k],levels_target[k])
-        loss += (1 - self.hier_weight)*classic_loss(levels_pred[-1],levels_target[-1])
+            loss += 0.5*classic_loss(log_levels_pred[k],levels_target[k])
+        loss += (1 - self.hier_weight)*classic_loss(log_levels_pred[-1],levels_target[-1])
 
         loss += (self.hier_weight)*kl_penalty
 
