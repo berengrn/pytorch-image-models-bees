@@ -42,7 +42,7 @@ y_false3 = torch.tensor([[5.,0.,5.,0.,0.,0.,5.,0.,0.,0.,5.,0.,0.], #erreurs de p
                          [5.,0.,0.,5.,0.,0.,0.,5.,0.,0.,0.,5.,0.]
                         ])
 
-loss_fn = HierarchicalJsd(hierarchy_csv,hier_weight = 0.1).forward
+loss_fn = HierarchicalJsd(hierarchy_csv,hier_weight = 0.5).forward
 
 print("loss pour une prédiction avec de grosses erreurs hiérachiques")
 print(loss_fn(y_false1,y_true))
