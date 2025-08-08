@@ -29,6 +29,7 @@ import matplotlib as plt
 
 from scripts.logic_seg_utils import create_class_to_labels, get_logicseg_predictions
 from scripts.metrics_hierarchy import MetricsHierarchy
+from scripts.hierarchical_accuracy import HierarchicalAccuracy
 import torch
 import torch.nn as nn
 import torchvision.utils
@@ -1235,7 +1236,8 @@ def train_one_epoch(
                     acc1 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=1)
                     acc5 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=5)
                 elif (args.hierarchy_jse):
-                    acc1,acc5 = utils.accuracy(output[:,:args.leaf_classes],target, topk=(1, 5))
+                    acc1 = HierarchicalAccuracy(args.hierarchy).compute(output,target,(1,))
+                    acc5 = HierarchicalAccuracy(args.hierarchy).compute(output,target,(5,))
                     acc1 = acc1 / 100
                     acc5 = acc5 / 100
                 else:
@@ -1470,8 +1472,12 @@ def validate(
                 # compute all the metrics using the metrics class (including top-1 and top-5 accuracy)
                 hierarchical_metrics = MetricsHierarchy(matrice_H, device)
                 hierarchical_metrics.compute_all_metrics(logicseg_predictions, onehot_targets, output, matrice_L)
-                        
 
+            elif (args.hierarchy_jse):
+                    acc1 = HierarchicalAccuracy(args.hierarchy).compute(output,target,(1,))
+                    acc5 = HierarchicalAccuracy(args.hierarchy).compute(output,target,(5,))
+                    acc1 = acc1 / 100
+                    acc5 = acc5 / 100
             else:
                 acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
                 acc1 = acc1 / 100
