@@ -535,10 +535,10 @@ def main():
         )
 
     #getting the path to the hierarchy.csv, to give it as a kwarg for our hierarchical classification model
-    if args.hierarchy:
+    if args.csv_tree:
         if not hasattr(args, "model_kwargs"):
             args.model_kwargs = {}
-        args.model_kwargs["hierarchy"] = args.hierarchy
+        args.model_kwargs["hierarchy"] = args.csv_tree
 
     model = create_model(
         args.model,
@@ -891,16 +891,16 @@ def main():
                 pos_weight=args.bce_pos_weight,
             )
         if args.hierarchy_jse:
-            if args.hierarchy:
-                train_loss_fn = HierarchicalJsd(args.hierarchy, args.smoothing, args.hier_weight)
+            if args.csv_tree:
+                train_loss_fn = HierarchicalJsd(args.csv_tree, args.smoothing, args.hier_weight)
             else:
                 print("error:please specify hierarchy csv file to use hierachical loss")
                 exit(1)        
         else:
             train_loss_fn = SoftTargetCrossEntropy()
     elif args.hierarchy_jse:
-        if args.hierarchy:
-            train_loss_fn = HierarchicalJsd(args.hierarchy, args.smoothing, args.hier_weight)
+        if args.csv_tree:
+            train_loss_fn = HierarchicalJsd(args.csv_tree, args.smoothing, args.hier_weight)
         else:
             print("error:please specify hierarchy csv file to use hierachical loss")
             exit(1)
@@ -913,8 +913,8 @@ def main():
                 pos_weight=args.bce_pos_weight,
             )
         if args.hierarchy_jse:
-            if args.hierarchy:
-                train_loss_fn = HierarchicalJsd(args.hierarchy, smoothing=args.smoothing)
+            if args.csv_tree:
+                train_loss_fn = HierarchicalJsd(args.csv_tree, smoothing=args.smoothing)
             else:
                 print("error:please specify hierarchy csv file to use custom hierachical loss")
                 exit(1)
@@ -1236,8 +1236,8 @@ def train_one_epoch(
                     acc1 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=1)
                     acc5 = topk_accuracy_logicseg(logicseg_predictions, onehot_targets, topk=5)
                 elif (args.hierarchy_jse):
-                    acc1 = HierarchicalAccuracy(args.hierarchy).compute(output,target,(1,))
-                    acc5 = HierarchicalAccuracy(args.hierarchy).compute(output,target,(5,))
+                    acc1 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(1,))
+                    acc5 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(5,))
                     acc1 = acc1 / 100
                     acc5 = acc5 / 100
                 else:
@@ -1474,8 +1474,8 @@ def validate(
                 hierarchical_metrics.compute_all_metrics(logicseg_predictions, onehot_targets, output, matrice_L)
 
             elif (args.hierarchy_jse):
-                    acc1 = HierarchicalAccuracy(args.hierarchy).compute(output,target,(1,))
-                    acc5 = HierarchicalAccuracy(args.hierarchy).compute(output,target,(5,))
+                    acc1 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(1,))
+                    acc5 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(5,))
                     acc1 = acc1 / 100
                     acc5 = acc5 / 100
             else:
