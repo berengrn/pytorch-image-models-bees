@@ -1056,7 +1056,9 @@ def main():
                     device=device,
                     amp_autocast=amp_autocast,
                     model_dtype=model_dtype,
-                    label_matrix=label_matrix
+                    label_matrix=label_matrix,
+                    nodes_to_leaves=nodes_to_leaves,
+                    internal_nodes_heights=internal_nodes_heights
                 )
 
                 if model_ema is not None and not args.model_ema_force_cpu:
@@ -1411,7 +1413,9 @@ def validate(
         amp_autocast=suppress,
         model_dtype=None,
         log_suffix='',
-        label_matrix=None
+        label_matrix=None,
+        nodes_to_leaves=None,
+        internal_nodes_heights=None,
 ):
     batch_time_m = utils.AverageMeter()
     losses_m = utils.AverageMeter()
@@ -1480,7 +1484,7 @@ def validate(
                 internal_nodes_heights=internal_nodes_heights,
                 beta=args.softlabels_beta,
                 device=device)
-                
+
                 acc1 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(1,))
                 acc5 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(5,))
                 acc1 = acc1 / 100
