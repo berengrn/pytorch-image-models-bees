@@ -1474,10 +1474,17 @@ def validate(
                 hierarchical_metrics.compute_all_metrics(logicseg_predictions, onehot_targets, output, matrice_L)
 
             elif (args.hierarchy_jse):
-                    acc1 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(1,))
-                    acc5 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(5,))
-                    acc1 = acc1 / 100
-                    acc5 = acc5 / 100
+                target = compute_soft_labels(
+                target,
+                nodes_to_leaves=nodes_to_leaves,
+                internal_nodes_heights=internal_nodes_heights,
+                beta=args.softlabels_beta,
+                device=device)
+                
+                acc1 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(1,))
+                acc5 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(5,))
+                acc1 = acc1 / 100
+                acc5 = acc5 / 100
             else:
                 acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
                 acc1 = acc1 / 100
