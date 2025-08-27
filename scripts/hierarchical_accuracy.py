@@ -15,13 +15,13 @@ class HierarchicalAccuracy(nn.Module):
         params: output, target: must be of size batch_size x total_classes
         """
         result = torch.tensor(0.0,device=self.device)
+        k = 0 #Compteur de niveaux pour lesquels on a calculé une accuracy
         for l in range(self.nbLevels):
-            k = 0 #Compteur de niveaux pour lesquels on a calculé une accuracy
             if max(topk) < self.piquets[l+1] - self.piquets[l]:
                 k+=1
                 result += accuracy(output[:,self.piquets[l]:self.piquets[l+1]],
                                 torch.argmax(target[:,self.piquets[l]:self.piquets[l+1]], dim=1), topk=topk)[0].to(self.device)
-                result /= k
+        result /= k
         return result
     
 

@@ -1202,6 +1202,9 @@ def train_one_epoch(
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
 
+        if batch_idx == 1:
+            print("Hard target:", target)
+
         if args.softlabels:
             target = compute_soft_labels(
                 target,
@@ -1210,6 +1213,9 @@ def train_one_epoch(
                 beta=args.softlabels_beta,
                 device=device
             )
+
+        if batch_idx == 1:
+            print("Soft target:", target)
 
         # multiply by accum steps to get equivalent for full update
         data_time_m.update(accum_steps * (time.time() - data_start_time))
@@ -1478,7 +1484,13 @@ def validate(
                 hierarchical_metrics.compute_all_metrics(logicseg_predictions, onehot_targets, output, matrice_L)
 
             elif (args.hierarchy_jse):
+                if batch_idx == 1:
+                    print("target feed a validate:",target)
+
                 target = one_hot(target,args.leaf_classes)
+                
+                if batch_idx == 1:
+                    print("target one hot:",target)
 
                 target = compute_soft_labels(
                 target,
@@ -1486,6 +1498,9 @@ def validate(
                 internal_nodes_heights=internal_nodes_heights,
                 beta=args.softlabels_beta,
                 device=device)
+
+                if batch_idx == 1:
+                    print("soft target feed a l'accuracy",target)
 
                 acc1 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(1,))
                 acc5 = HierarchicalAccuracy(args.csv_tree).compute(output,target,(5,))
