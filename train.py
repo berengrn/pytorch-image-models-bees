@@ -1203,7 +1203,7 @@ def train_one_epoch(
             input = input.contiguous(memory_format=torch.channels_last)
 
         if batch_idx == 1:
-            print("Hard target:", target)
+            print("Hard target:", target.size())
 
         if args.softlabels:
             target = compute_soft_labels(
@@ -1215,7 +1215,7 @@ def train_one_epoch(
             )
 
         if batch_idx == 1:
-            print("Soft target:", target)
+            print("Soft target:", target.size())
 
         # multiply by accum steps to get equivalent for full update
         data_time_m.update(accum_steps * (time.time() - data_start_time))
@@ -1485,12 +1485,12 @@ def validate(
 
             elif (args.hierarchy_jse):
                 if batch_idx == 1:
-                    print("target feed a validate:",target)
+                    print("target feed a validate:",target.size())
 
                 target = one_hot(target,args.leaf_classes)
                 
                 if batch_idx == 1:
-                    print("target one hot:",target)
+                    print("target one hot:",target.size())
 
                 target = compute_soft_labels(
                 target,

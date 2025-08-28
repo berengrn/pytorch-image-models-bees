@@ -14,13 +14,18 @@ class HierarchicalAccuracy(nn.Module):
         """
         params: output, target: must be of size batch_size x total_classes
         """
+        levels_target = [target[:,-self.piquets[-1]:]]
+        for l in range(self.nbLevels - 1, 0, -1):
+            level = (self.H[self.piquets[l-1]:self.piquets[l],self.piquets[l]:self.piquets[l+1]] @ levels_target[0].t()).t()
+            levels_target.insert(0,level)
+
         result = torch.tensor(0.0,device=self.device)
-        k = 0 #Compteur de niveaux pour lesquels on a calculé une accuracy
+        k = 0 #Compteur de niveaux pour lesquels on a calculé une accuracy (certains niveaux n'ont pas assez de classes pour acc5)
         for l in range(self.nbLevels):
             if max(topk) < self.piquets[l+1] - self.piquets[l]:
                 k+=1
                 result += accuracy(output[:,self.piquets[l]:self.piquets[l+1]],
-                                torch.argmax(target[:,self.piquets[l]:self.piquets[l+1]], dim=1), topk=topk)[0].to(self.device)
+                                torch.argmax(levels_target[l]), topk=topk)[0].to(self.device)
         result /= k
         return result
     

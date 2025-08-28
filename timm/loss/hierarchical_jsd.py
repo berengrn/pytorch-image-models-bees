@@ -97,7 +97,7 @@ class HierarchicalJsd(nn.Module):
         log_levels_pred = [F.log_softmax(level + epsilon,dim=1) for level in levels_pred]
         log_levels_children = [F.log_softmax(level + epsilon,dim=1) for level in levels_children]
         
-        levels_target = [target[:,:self.leaf_classes]]
+        levels_target = [target[:,-self.leaf_classes:]]
         for l in range(nbLevels - 1, 0, -1):
             level = (self.H[self.piquets[l-1]:self.piquets[l],self.piquets[l]:self.piquets[l+1]] @ levels_target[0].t()).t()
             F.normalize(level) #dans la pratique les coefficients ne somment pas excatement à 1
