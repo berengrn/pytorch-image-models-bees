@@ -26,9 +26,6 @@ class HierarchicalAccuracy(nn.Module):
             if max(topk) < self.piquets[l+1] - self.piquets[l]:
                 k+=1
                 result += accuracy(output[:,self.piquets[l]:self.piquets[l+1]],
-                                torch.argmax(levels_target[l]), topk=topk)[0].to(self.device)
+                                torch.argmax(levels_target[l],dim=1), topk=topk)[0].to(self.device)
         result /= k
         return result
-    
-
-
