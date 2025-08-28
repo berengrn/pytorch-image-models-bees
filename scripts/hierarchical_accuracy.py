@@ -7,7 +7,8 @@ class HierarchicalAccuracy(nn.Module):
     def __init__(self,csv_file):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.csv_file = csv_file
-        _,_,self.piquets = BuildDictionaries(csv_file)
+        parent_to_children,_,self.piquets = BuildDictionaries(csv_file)
+        self.H = Build_H_Matrix(parent_to_children,self.piquets).to(self.device)
         self.nbLevels = len(self.piquets) - 1
 
     def compute(self,output,target,topk=1):
