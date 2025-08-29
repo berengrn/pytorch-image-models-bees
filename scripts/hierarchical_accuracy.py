@@ -15,7 +15,7 @@ class HierarchicalAccuracy(nn.Module):
         """
         params: output, target: must be of size batch_size x total_classes
         """
-        levels_target = [target[:,-self.piquets[-1]:]]
+        levels_target = [target[:,self.piquets[-2]:]]
         for l in range(self.nbLevels - 1, 0, -1):
             level = (self.H[self.piquets[l-1]:self.piquets[l],self.piquets[l]:self.piquets[l+1]] @ levels_target[0].t()).t()
             levels_target.insert(0,level)
