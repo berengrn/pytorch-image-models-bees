@@ -10,12 +10,13 @@ class HierarchicalAccuracy(nn.Module):
         parent_to_children,_,self.piquets = BuildDictionaries(csv_file)
         self.H = Build_H_Matrix(parent_to_children,self.piquets).to(self.device)
         self.nbLevels = len(self.piquets) - 1
+        self.leaf_classes = self.piquets[-1] - self.piquets[-2]
 
     def compute(self,output,target,topk=1):
         """
-        params: output, target: must be of size batch_size x total_classes
+        params: output, target: must be soft target of size batch_size x leaf_classes (the rest of the target will be automatically reconstructed)
         """
-        levels_target = [target[:,self.piquets[-2]:]]
+        levels_target = [target[:,-self.leaf_classes:]]
         for l in range(self.nbLevels - 1, 0, -1):
             level = (self.H[self.piquets[l-1]:self.piquets[l],self.piquets[l]:self.piquets[l+1]] @ levels_target[0].t()).t()
             levels_target.insert(0,level)
